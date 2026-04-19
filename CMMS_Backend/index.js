@@ -709,66 +709,6 @@ app.delete("/api/devices/:id", authMiddleware, requireRole("admin"), async (req,
 });
 
 // --------------------------------------------------------
-// 6. Asset Routes
-// --------------------------------------------------------
-
-// Create asset
-app.post("/assets", async (req, res) => {
-  try {
-    const { asset_name, asset_type, location } = req.body;
-    if (!asset_name) {
-      return res.status(400).json({ error: "asset_name is required" });
-    }
-    const newAsset = await pool.query(
-      "INSERT INTO assets (asset_name, asset_type, notes) VALUES($1, $2, $3) RETURNING *",
-      [asset_name, asset_type || null, location || null]
-    );
-    res.json(newAsset.rows[0]);
-  } catch (err) {
-    console.error("Error creating asset:", err.message);
-    res.status(500).json({ error: "Server Error" });
-  }
-});
-
-// Get all assets
-app.get("/assets", async (req, res) => {
-  try {
-    const allAssets = await pool.query(
-      "SELECT id, asset_name, asset_type, location_id, notes, created_at FROM assets ORDER BY id"
-    );
-    res.json(allAssets.rows);
-  } catch (err) {
-    console.error("Error fetching assets:", err.message);
-    res.status(500).json({ error: "Server Error" });
-  }
-});
-
-// Bulk insert assets
-app.post("/assets/bulk", async (req, res) => {
-  try {
-    const assets = req.body;
-    const insertedAssets = [];
-
-    for (const asset of assets) {
-      const { asset_name, asset_type, location } = asset;
-      const result = await pool.query(
-        "INSERT INTO assets (asset_name, asset_type, notes) VALUES($1, $2, $3) RETURNING *",
-        [asset_name, asset_type || null, location || null]
-      );
-      insertedAssets.push(result.rows[0]);
-    }
-
-    res.json({
-      message: `تم إضافة ${insertedAssets.length} جهاز بنجاح!`,
-      data: insertedAssets,
-    });
-  } catch (err) {
-    console.error("Error bulk inserting assets:", err.message);
-    res.status(500).json({ error: "Server Error" });
-  }
-});
-
-// --------------------------------------------------------
 // 7. Maintenance Request Routes
 // --------------------------------------------------------
 
@@ -1166,11 +1106,8 @@ app.get("/api/schedule", authMiddleware, async (req, res) => {
   try {
     const plans = await pool.query(`
       SELECT pp.*,
-        array_agg(DISTINCT a.asset_name) FILTER (WHERE a.asset_name IS NOT NULL) as assets,
         array_agg(DISTINCT pt.task_name) FILTER (WHERE pt.task_name IS NOT NULL) as tasks
       FROM pm_plans pp
-      LEFT JOIN pm_plan_assets pa ON pa.pm_plan_id = pp.id
-      LEFT JOIN assets a ON a.id = pa.asset_id
       LEFT JOIN pm_plan_tasks pt ON pt.pm_plan_id = pp.id
       GROUP BY pp.id
       ORDER BY pp.id DESC

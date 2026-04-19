@@ -1,77 +1,67 @@
-# UML Class Diagram - CMMS System
-
-This diagram represents the logical structure of the CMMS application, showing the main entities and their relationships.
+# مخطط الفئات (Class Diagram) - نظام CMMS
 
 ```mermaid
 classDiagram
-    class User {
-        +Int id
-        +String full_name
-        +String email
-        +String role
-        +login()
-        +updateProfile()
+    class مستخدم {
+        +Int المعرف
+        +String الاسم_الكامل
+        +String البريد_الإلكتروني
+        +String الدور
+        +Boolean نشط
+        +تسجيل_الدخول()
+        +تحديث_الملف_الشخصي()
     }
 
-    class Asset {
-        +Int id
-        +String asset_code
-        +String asset_name
-        +Int criticality
-        +updateStatus()
+    class معمل {
+        +Int المعرف
+        +String الاسم
+        +String الموقع
+        +String الوصف
     }
 
-    class MaintenanceRequest {
-        +Int id
-        +String request_code
-        +String status
-        +DateTime requested_at
-        +create()
-        +assign()
+    class جهاز {
+        +Int المعرف
+        +Int معرف_المعمل
+        +String الاسم
+        +String النوع
+        +String الحالة
     }
 
-    class WorkOrder {
-        +Int id
-        +String wo_number
-        +String title
-        +DateTime scheduled_start
-        +complete()
+    class طلب_صيانة {
+        +Int المعرف
+        +String كود_الطلب
+        +String العنوان
+        +String الوصف
+        +Int معرف_الأولوية
+        +Int معرف_الجهاز
+        +Int معرف_المعمل
+        +String الحالة
+        +DateTime تاريخ_الطلب
+        +إنشاء()
+        +تعيين()
+        +تحديث_الحالة()
     }
 
-    class Part {
-        +Int id
-        +String part_number
-        +String name
-        +Float unit_price
+    class خطة_صيانة_وقائية {
+        +Int المعرف
+        +String الاسم
+        +String نوع_التكرار
+        +Int قيمة_التكرار
+        +Boolean نشط
     }
 
-    class Inventory {
-        +Int id
-        +Float qty_on_hand
-        +Float min_qty
+    class تنبيه {
+        +Int المعرف
+        +Int معرف_المستخدم
+        +String العنوان
+        +String الرسالة
+        +Boolean مقروء
     }
 
-    class Supplier {
-        +Int id
-        +String name
-        +String email
-    }
-
-    User "1" -- "0..*" MaintenanceRequest : requests
-    User "1" -- "0..*" MaintenanceRequest : assigned_to
-    Asset "1" -- "0..*" MaintenanceRequest : has
-    MaintenanceRequest "1" -- "0..1" WorkOrder : generates
-    WorkOrder "1" -- "0..*" Part : uses
-    Part "1" -- "1" Inventory : tracked_in
-    Supplier "1" -- "0..*" Part : supplies
-    Asset "1" -- "0..*" WorkOrder : maintenance_on
+    مستخدم "1" -- "0..*" طلب_صيانة : يقدم
+    مستخدم "1" -- "0..*" طلب_صيانة : معين_إلى
+    معمل "1" -- "0..*" جهاز : يحتوي
+    جهاز "1" -- "0..*" طلب_صيانة : موضوع_الطلب
+    معمل "1" -- "0..*" طلب_صيانة : موقع_الطلب
+    مستخدم "1" -- "0..*" تنبيه : يتلقى
 ```
-
-## Description of Entities
-- **User**: Represents system users with specific roles (Admin, Technician, etc.).
-- **Asset**: The equipment or machinery being maintained.
-- **MaintenanceRequest**: An initial request for maintenance work.
-- **WorkOrder**: A formalized task or set of tasks for maintenance.
-- **Part**: Replacement parts or consumables used in maintenance.
-- **Inventory**: Storage and quantity tracking for parts.
-- **Supplier**: Vendors providing parts and services.

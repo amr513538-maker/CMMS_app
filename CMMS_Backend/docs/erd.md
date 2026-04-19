@@ -1,126 +1,121 @@
-# Entity Relationship Diagram (ERD) - CMMS System
-
-This diagram illustrates the database schema and the relationships between tables.
+# مخطط علاقات الكيانات (ERD) - نظام CMMS
 
 ```mermaid
 erDiagram
-    ROLES ||--o{ USERS : "defines role"
-    USERS ||--o{ AUDIT_LOGS : "performed by"
-    LOCATIONS ||--o{ LOCATIONS : "parent-child"
-    LOCATIONS ||--o{ ASSETS : "belongs to"
-    ASSET_CATEGORIES ||--o{ ASSETS : "categorizes"
-    ASSET_STATUSES ||--o{ ASSETS : "indicates status"
-    ASSETS ||--o{ ASSET_DOCUMENTS : "has"
-    ASSETS ||--o{ METERS : "connected to"
-    METERS ||--o{ METER_READINGS : "records"
-    USERS ||--o{ METER_READINGS : "recorded by"
-    PRIORITIES ||--o{ MAINTENANCE_REQUESTS : "priority level"
-    USERS ||--o{ MAINTENANCE_REQUESTS : "requested by"
-    USERS ||--o{ MAINTENANCE_REQUESTS : "assigned to"
-    MAINTENANCE_REQUESTS ||--o{ REQUEST_EVENTS : "history"
-    USERS ||--o{ REQUEST_EVENTS : "event actor"
-    WORK_ORDER_STATUSES ||--o{ WORK_ORDERS : "status level"
-    ASSETS ||--o{ WORK_ORDERS : "task on"
-    LOCATIONS ||--o{ WORK_ORDERS : "location of"
-    PRIORITIES ||--o{ WORK_ORDERS : "priority level"
-    MAINTENANCE_REQUESTS ||--o| WORK_ORDERS : "origin"
-    USERS ||--o{ WORK_ORDERS : "requested by"
-    USERS ||--o{ WORK_ORDERS : "assigned to"
-    WORK_ORDERS ||--o{ WORK_ORDER_TASKS : "contains"
-    WORK_ORDERS ||--o{ WORK_ORDER_COMMENTS : "has"
-    USERS ||--o{ WORK_ORDER_COMMENTS : "authored by"
-    PARTS ||--o{ INVENTORY : "tracked"
-    WAREHOUSES ||--o{ INVENTORY : "stores"
-    LOCATIONS ||--o{ WAREHOUSES : "located at"
-    WAREHOUSES ||--o{ INVENTORY_TRANSACTIONS : "source"
-    PARTS ||--o{ INVENTORY_TRANSACTIONS : "item changed"
-    USERS ||--o{ INVENTORY_TRANSACTIONS : "created by"
-    WORK_ORDERS ||--o{ WORK_ORDER_PARTS : "consumes"
-    PARTS ||--o{ WORK_ORDER_PARTS : "consumed"
-    WAREHOUSES ||--o{ WORK_ORDER_PARTS : "from inventory"
-    SUPPLIERS ||--o{ PURCHASE_ORDERS : "ordered from"
-    USERS ||--o{ PURCHASE_ORDERS : "ordered by"
-    PURCHASE_ORDERS ||--o{ PURCHASE_ORDER_LINES : "contains"
-    PARTS ||--o{ PURCHASE_ORDER_LINES : "item ordered"
-    METERS ||--o| PM_PLANS : "triggers"
-    PM_PLANS ||--o{ PM_PLAN_ASSETS : "applies to"
-    ASSETS ||--o{ PM_PLAN_ASSETS : "under maintenance"
-    PM_PLANS ||--o{ PM_PLAN_TASKS : "defines tasks"
+    الأدوار ||--o{ المستخدمين : "تحدد الدور"
+    المستخدمين ||--o{ سجلات_المراجعة : "قام به"
+    المستخدمين ||--o{ التنبيهات : "استلمها"
+    المعامل ||--o{ الأجهزة : "يحتوي"
+    المعامل ||--o{ طلبات_الصيانة : "يقع في"
+    الأجهزة ||--o{ طلبات_الصيانة : "تم الإبلاغ عنه"
+    الأولويات ||--o{ طلبات_الصيانة : "مستوى الأهمية"
+    المستخدمين ||--o{ طلبات_الصيانة : "بواسطة"
+    المستخدمين ||--o{ طلبات_الصيانة : "معين إلى"
+    طلبات_الصيانة ||--o{ أحداث_الطلبات : "السجل"
+    المستخدمين ||--o{ أحداث_الطلبات : "منفذ الحدث"
+    خطط_الصيانة_الوقائية ||--o{ مهام_خطط_الصيانة : "تحتوي على مهام"
 
-    ROLES {
-        bigint id PK
-        text name
-        text description
-        timestamptz created_at
+    الأدوار {
+        bigint المعرف PK
+        text الاسم
+        text الوصف
+        timestamptz تاريخ_الإنشاء
     }
-    USERS {
-        bigint id PK
-        text full_name
-        text email
-        text password_hash
-        text google_id
-        text avatar_url
-        text phone
-        text department
-        text job_title
-        bigint role_id FK
-        boolean is_active
-        timestamptz last_login_at
-        timestamptz created_at
-        timestamptz updated_at
+    المستخدمين {
+        bigint المعرف PK
+        text الاسم_الكامل
+        text البريد_الإلكتروني
+        text هاش_كلمة_المرور
+        text معرف_جوجل
+        text رابط_الصورة
+        text الهاتف
+        text القسم
+        text المسمى_الوظيفي
+        bigint معرف_الدور FK
+        boolean نشط
+        timestamptz آخر_تسجيل_دخول
+        timestamptz تاريخ_الإنشاء
+        timestamptz تاريخ_التحديث
     }
-    ASSETS {
-        bigint id PK
-        text asset_code
-        text asset_name
-        bigint category_id FK
-        bigint status_id FK
-        bigint location_id FK
-        text manufacturer
-        text model
-        text serial_number
-        date purchase_date
-        date warranty_end
-        int criticality
-        text notes
-        boolean is_active
-        timestamptz created_at
-        timestamptz updated_at
+    المعامل {
+        bigint المعرف PK
+        text الاسم
+        text الموقع
+        text الوصف
+        timestamptz تاريخ_الإنشاء
     }
-    MAINTENANCE_REQUESTS {
-        bigint id PK
-        text request_code
-        text asset_name
-        text location
-        text description
-        text image_url
-        bigint priority_id FK
-        bigint requested_by FK
-        bigint assigned_to FK
-        timestamptz requested_at
-        timestamptz started_at
-        timestamptz completed_at
-        text status
-        timestamptz created_at
+    الأجهزة {
+        bigint المعرف PK
+        bigint معرف_المعمل FK
+        text الاسم
+        text النوع
+        text الحالة
+        timestamptz تاريخ_الإنشاء
     }
-    WORK_ORDERS {
-        bigint id PK
-        text wo_number
-        text title
-        text description
-        bigint asset_id FK
-        bigint location_id FK
-        bigint priority_id FK
-        bigint status_id FK
-        bigint maintenance_request_id FK
-        bigint requested_by FK
-        bigint assigned_to FK
-        timestamptz scheduled_start_at
-        timestamptz scheduled_end_at
-        timestamptz started_at
-        timestamptz completed_at
-        int downtime_minutes
-        timestamptz created_at
-        timestamptz updated_at
+    طلبات_الصيانة {
+        bigint المعرف PK
+        text كود_الطلب
+        text العنوان
+        text اسم_الأصل
+        text الموقع
+        text الوصف
+        text رابط_الصورة
+        bigint معرف_الأولوية FK
+        bigint مقدم_الطلب FK
+        bigint معين_إليه FK
+        bigint معرف_الجهاز FK
+        bigint معرف_المعمل FK
+        text الحالة
+        timestamptz تاريخ_الطلب
+        timestamptz تاريخ_البدء
+        timestamptz تاريخ_الإكمال
+        timestamptz تاريخ_الإنشاء
+    }
+    أحداث_الطلبات {
+        bigint المعرف PK
+        bigint معرف_الطلب FK
+        bigint معرف_المستخدم FK
+        text نوع_الحدث
+        text الرسالة
+        timestamptz تاريخ_الإنشاء
+    }
+    التنبيهات {
+        bigint المعرف PK
+        bigint معرف_المستخدم FK
+        text العنوان
+        text الرسالة
+        text الرابط
+        boolean مقروء
+        timestamptz تاريخ_الإنشاء
+    }
+    خطط_الصيانة_الوقائية {
+        bigint المعرف PK
+        text الاسم
+        text الوصف
+        text نوع_التكرار
+        int قيمة_التكرار
+        boolean نشط
+        timestamptz تاريخ_الإنشاء
+    }
+    مهام_خطط_الصيانة {
+        bigint المعرف PK
+        bigint معرف_خطة_الصيانة FK
+        text اسم_المهمة
+        int ترتيب_الفرز
+    }
+    سجلات_المراجعة {
+        bigint المعرف PK
+        bigint معرف_المستخدم FK
+        text الإجراء
+        text نوع_الكيان
+        text معرف_الكيان
+        jsonb البيانات_الوصفية
+        timestamptz تاريخ_الإنشاء
+    }
+    الأولويات {
+        bigint المعرف PK
+        text الاسم
+        int ترتيب_الفرز
+        timestamptz تاريخ_الإنشاء
     }
 ```
