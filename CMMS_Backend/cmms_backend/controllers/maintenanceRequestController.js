@@ -146,13 +146,10 @@ const notifyOnStatusChange = async (reqId, newStatus, actorUserId) => {
     const msg = `تم تحديث حالة الطلب ${r.request_code} إلى: ${translatedStatus}`;
     const link = `/track/${r.request_code}`;
 
+    // Send notification ONLY to the request owner (requested_by)
     if (r.requested_by && r.requested_by !== actorUserId) {
       await pool.query("INSERT INTO notifications (user_id, title, message, link) VALUES ($1,$2,$3,$4)",
         [r.requested_by, 'تحديث حالة الطلب', msg, link]);
-    }
-    if (r.assigned_to && r.assigned_to !== actorUserId) {
-      await pool.query("INSERT INTO notifications (user_id, title, message, link) VALUES ($1,$2,$3,$4)",
-        [r.assigned_to, 'تحديث حالة الطلب', msg, link]);
     }
   } catch (e) { console.error('Notify error:', e.message); }
 };

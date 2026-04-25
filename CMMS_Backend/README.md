@@ -1,98 +1,100 @@
 # CMMS - نظام إدارة الصيانة المحوسب
 
-## 📋 المتطلبات
-- **Node.js** v18+
-- **PostgreSQL** v14+
+نظام متكامل لإدارة الصيانة، الأجهزة، والمعامل. يحتوي على واجهة أمامية مبنية بـ React (Vite) وواجهة خلفية مبنية بـ Node.js و PostgreSQL.
+
+## 📋 المتطلبات الأساسية للتشغيل
+- **Node.js**: إصدار 18 أو أحدث.
+- **PostgreSQL**: إصدار 14 أو أحدث (تأكد من تشغيل الخدمة لديك).
 
 ---
 
-## 🚀 التشغيل السريع
+## 🚀 دليل التشغيل السريع (عند النقل لجهاز جديد)
 
-### 1. إعداد قاعدة البيانات
-```bash
-# أنشئ قاعدة بيانات PostgreSQL باسم cmms_db
-createdb cmms_db
+### 1. إعداد قاعدة البيانات (PostgreSQL)
+تأكد من إنشاء قاعدة بيانات فارغة باسم `cmms_db`:
+```sql
+CREATE DATABASE cmms_db;
 ```
+*(أو استخدم أداة مثل pgAdmin لإنشائها)*
 
-### 2. إعداد Backend
+### 2. إعداد الواجهة الخلفية (Backend)
+افتح التيرمينال وتوجه لمجلد `cmms_backend`:
 ```bash
 cd cmms_backend
 
-# انسخ ملف البيئة وعدّل الإعدادات
-cp .env.example .env
-# عدّل DB_USER و DB_PASSWORD حسب إعداداتك
-
-# تثبيت المكتبات
+# 1. تثبيت الحزم البرمجية
 npm install
 
-# تهيئة قاعدة البيانات (إنشاء الجداول + البيانات الأساسية)
+# 2. إعداد ملف البيئة
+# قم بإنشاء ملف .env بجانب ملف index.js وأضف فيه بيانات الاتصال:
+# DB_USER=postgres
+# DB_PASSWORD=12345
+# DB_HOST=localhost
+# DB_PORT=5432
+# DB_NAME=cmms_db
+
+# 3. تهيئة قاعدة البيانات وإنشاء الجداول والبيانات الأساسية (يستخدم للمرة الأولى فقط)
 npm run db:init
 
-# تشغيل السيرفر
+# 4. تشغيل السيرفر
 npm start
 ```
+> **ملاحظة:** النظام يحتوي على ميزة Auto-Migration، حيث يقوم تلقائياً بإصلاح وبناء أي أعمدة أو جداول ناقصة بمجرد تشغيل السيرفر (`npm start`).
 
-### 3. إعداد Frontend
+### 3. إعداد الواجهة الأمامية (Frontend)
+افتح تيرمينال آخر وتوجه لمجلد `cmms_frontend`:
 ```bash
 cd cmms_frontend
 
-# تثبيت المكتبات
+# 1. تثبيت الحزم البرمجية
 npm install
 
-# تشغيل في وضع التطوير
+# 2. تشغيل واجهة المستخدم
 npm run dev
 ```
 
-### 4. الدخول
-- **الواجهة:** http://localhost:5173
-- **API:** http://localhost:5000/api
-- **بيانات Admin الافتراضية:**
-  - User: `admin`
-  - Password: `admin`
+---
+
+## 🔑 بيانات الدخول الافتراضية
+بعد تشغيل النظام، يمكنك الدخول للواجهة عبر الرابط: [http://localhost:5173](http://localhost:5173)
+
+- **اسم المستخدم (البريد):** `admin`
+- **كلمة المرور:** `admin`
 
 ---
 
-## 👥 الأدوار
+## 👥 الأدوار والصلاحيات
 | الدور | الوصف |
 |-------|-------|
-| `admin` | مدير النظام - صلاحيات كاملة |
-| `user` | مستخدم عادي - إنشاء وتتبع الطلبات |
-| `IT Support` | دعم تقني - إدارة الطلبات والأجهزة |
+| `admin` | **مدير النظام** - يمتلك كافة الصلاحيات لإدارة المستخدمين، الأقسام، المباني، والمعامل. |
+| `user` | **مستخدم عادي** - يمكنه فقط رفع طلبات الصيانة وتتبع حالتها، ويصله إشعار عند تحديثها. |
+| `IT Support` | **دعم تقني (فني)** - يستلم طلبات الصيانة، يحدّث حالتها، ويتواصل عبر التعليقات. |
 
 ---
 
 ## 📁 هيكل المشروع
-```
-cmms_backend/
-├── index.js            # نقطة الدخول الرئيسية
-├── db.js               # اتصال PostgreSQL
-├── .env                # إعدادات البيئة
-├── .env.example        # نموذج الإعدادات
-├── controllers/        # Business Logic
-├── routes/             # API Routes
-├── middleware/          # Auth + Upload
-├── utils/              # JWT Helper
-├── sql/schema.sql      # Database Schema
-├── scripts/dbInit.js   # Database Initializer
-└── public/uploads/     # Uploaded Files
 
-cmms_frontend/
-├── src/
-│   ├── App.jsx         # Main App + Routing
-│   ├── api/client.js   # HTTP Client
-│   ├── context/        # Auth + Theme Context
-│   ├── components/     # Shared Components
-│   └── pages/          # All Pages
-└── vite.config.js      # Vite + Proxy Config
+```text
+CMMS_Backend/
+├── cmms_backend/               # السيرفر وقاعدة البيانات
+│   ├── index.js                # نقطة البداية (Entry Point)
+│   ├── db.js                   # الاتصال بـ PostgreSQL + Auto-Migration
+│   ├── controllers/            # المنطق البرمجي (Business Logic)
+│   ├── routes/                 # مسارات الـ API
+│   ├── middleware/             # التحقق من الصلاحيات ورفع الملفات
+│   ├── sql/schema.sql          # المخطط الهيكلي لقاعدة البيانات
+│   └── scripts/dbInit.js       # سكربت إنشاء الإعدادات الافتراضية
+│
+└── cmms_frontend/              # واجهة المستخدم (React)
+    ├── src/
+    │   ├── api/client.js       # إعدادات الاتصال بالسيرفر
+    │   ├── components/         # المكونات المشتركة (أزرار، نوافذ)
+    │   └── pages/              # صفحات النظام (لوحة التحكم، الإعدادات، الطلبات)
+    └── vite.config.js          # إعدادات Vite ومسار الـ Proxy للسيرفر
 ```
 
 ---
 
-## 🔧 أوامر مفيدة
-```bash
-# إعادة تهيئة قاعدة البيانات (⚠️ يحذف كل البيانات)
-npm run db:init
-
-# تشغيل السيرفر
-npm start
-```
+## 🔧 ملاحظات هامة
+- المجلد `cmms_backend/public/uploads` يتم إنشاؤه تلقائياً بواسطة النظام عند أول عملية رفع لملف (صورة أو مرفق).
+- إذا واجهت أي مشاكل في الجداول بعد نقل المشروع، ببساطة أعد تشغيل السيرفر `npm start` وسيقوم النظام بإصلاح النواقص برمجياً.

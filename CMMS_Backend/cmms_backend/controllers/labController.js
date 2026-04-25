@@ -28,7 +28,8 @@ const createLab = async (req, res) => {
     const newLab = await pool.query("INSERT INTO labs (name, building, department) VALUES ($1, $2, $3) RETURNING *", [name, building, department]);
     res.status(201).json(newLab.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Server Error" });
+    console.error("Error creating lab:", err.message);
+    res.status(500).json({ error: `خطأ في قاعدة البيانات: ${err.message}` });
   }
 };
 
@@ -39,6 +40,7 @@ const updateLab = async (req, res) => {
     const updated = await pool.query("UPDATE labs SET name = $1, building = $2, department = $3 WHERE id = $4 RETURNING *", [name, building, department, id]);
     res.json(updated.rows[0]);
   } catch (err) {
+    console.error("Error updating lab:", err.message);
     res.status(500).json({ error: "Server Error" });
   }
 };

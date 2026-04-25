@@ -62,20 +62,47 @@ export default function LabsPage() {
     e.preventDefault();
     const payload = Object.fromEntries(new FormData(e.currentTarget));
     try {
-      if (editingLab) await api(`/api/labs/${editingLab.id}`, { method: "PUT", body: JSON.stringify(payload) });
-      else await api("/api/labs", { method: "POST", body: JSON.stringify(payload) });
-      setShowModal(false); setEditingLab(null); fetchData();
-    } catch { alert("فشل الحفظ"); }
+      const res = editingLab 
+        ? await api(`/api/labs/${editingLab.id}`, { method: "PUT", body: JSON.stringify(payload) })
+        : await api("/api/labs", { method: "POST", body: JSON.stringify(payload) });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert(errorData.error || "فشل الحفظ");
+        return;
+      }
+      
+      setShowModal(false); 
+      setEditingLab(null); 
+      fetchData();
+    } catch (err) { 
+      console.error(err);
+      alert("حدث خطأ في الاتصال بالسيرفر"); 
+    }
   };
 
   const handleSaveDevice = async (e) => {
     e.preventDefault();
     const payload = Object.fromEntries(new FormData(e.currentTarget));
     try {
-      if (editingDevice) await api(`/api/devices/${editingDevice.id}`, { method: "PUT", body: JSON.stringify(payload) });
-      else await api("/api/devices", { method: "POST", body: JSON.stringify(payload) });
-      setShowDeviceModal(false); setPrefillLab(null); setEditingDevice(null); fetchData();
-    } catch { alert("فشل حفظ الجهاز"); }
+      const res = editingDevice 
+        ? await api(`/api/devices/${editingDevice.id}`, { method: "PUT", body: JSON.stringify(payload) })
+        : await api("/api/devices", { method: "POST", body: JSON.stringify(payload) });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert(errorData.error || "فشل حفظ الجهاز");
+        return;
+      }
+      
+      setShowDeviceModal(false); 
+      setPrefillLab(null); 
+      setEditingDevice(null); 
+      fetchData();
+    } catch (err) { 
+      console.error(err);
+      alert("حدث خطأ في الاتصال بالسيرفر"); 
+    }
   };
 
   const handleAddBuilding = async () => {

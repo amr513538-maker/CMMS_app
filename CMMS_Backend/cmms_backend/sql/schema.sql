@@ -12,6 +12,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- =========================
 -- Reset (Drop all tables)
 -- =========================
+DROP TABLE IF EXISTS buildings CASCADE;
 DROP TABLE IF EXISTS job_titles CASCADE;
 DROP TABLE IF EXISTS departments CASCADE;
 DROP TABLE IF EXISTS notifications CASCADE;
@@ -73,10 +74,18 @@ CREATE TABLE priorities (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE buildings (
+  id          BIGSERIAL PRIMARY KEY,
+  name        TEXT NOT NULL UNIQUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE labs (
   id          BIGSERIAL PRIMARY KEY,
   name        TEXT NOT NULL UNIQUE,
-  building    TEXT,
+  building    TEXT, -- Can keep as TEXT for backwards compatibility or transition
+  building_id BIGINT REFERENCES buildings(id) ON DELETE SET NULL,
+  department  TEXT,
   location    TEXT,
   description TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()

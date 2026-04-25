@@ -5,6 +5,7 @@ const getBuildings = async (req, res) => {
     const result = await pool.query("SELECT * FROM buildings ORDER BY name ASC");
     res.json(result.rows);
   } catch (err) {
+    console.error("Error fetching buildings:", err.message);
     res.status(500).json({ error: "Server Error" });
   }
 };
@@ -17,7 +18,8 @@ const createBuilding = async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: "هذا المبنى موجود بالفعل" });
-    res.status(500).json({ error: "Server Error" });
+    console.error("Error creating building:", err.message);
+    res.status(500).json({ error: `خطأ في قاعدة البيانات: ${err.message}` });
   }
 };
 
