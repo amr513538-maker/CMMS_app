@@ -31,10 +31,10 @@ if not exist "cmms_backend\.env" (
 
 echo.
 echo Starting Backend Server...
-start "CMMS Backend Server" cmd /k "cd cmms_backend && npm start"
+start /B cmd /c "cd cmms_backend && npm start"
 
 echo Starting Frontend Server...
-start "CMMS Frontend UI" cmd /k "cd cmms_frontend && npm run dev"
+start /B cmd /c "cd cmms_frontend && npm run dev"
 
 echo.
 echo Servers are starting up...
@@ -43,5 +43,8 @@ timeout /t 5 >nul
 
 echo Opening browser...
 start http://localhost:5173
+
+:: Hide this terminal window completely (Vanish)
+powershell -Command "Add-Type -Name Window -Namespace Console -MemberDefinition '[DllImport(\"Kernel32.dll\")]public static extern IntPtr GetConsoleWindow();[DllImport(\"user32.dll\")]public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);'; [Console.Window]::ShowWindow([Console.Window]::GetConsoleWindow(), 0)"
 
 exit
