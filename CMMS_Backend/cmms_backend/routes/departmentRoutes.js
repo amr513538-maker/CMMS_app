@@ -5,6 +5,8 @@ const departmentController = require("../controllers/departmentController");
 
 router.get("/", authMiddleware, departmentController.getDepartments);
 router.post("/", authMiddleware, requireRole("admin"), departmentController.createDepartment);
+router.put("/:id", authMiddleware, requireRole("admin"), departmentController.updateDepartment);
 router.delete("/:id", authMiddleware, requireRole("admin"), departmentController.deleteDepartment);
 
 module.exports = router;
+

@@ -1,5 +1,8 @@
--- CMMS Database Schema (Modernized)
+-- ======================================================
+-- CMMS Database Schema
+-- نظام إدارة الصيانة المحوسب
 -- Run via: npm run db:init
+-- ======================================================
 
 BEGIN;
 
@@ -7,24 +10,24 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- =========================
--- Reset
+-- Reset (Drop all tables)
 -- =========================
+DROP TABLE IF EXISTS job_titles CASCADE;
+DROP TABLE IF EXISTS departments CASCADE;
 DROP TABLE IF EXISTS notifications CASCADE;
 DROP TABLE IF EXISTS request_events CASCADE;
 DROP TABLE IF EXISTS maintenance_requests CASCADE;
 DROP TABLE IF EXISTS devices CASCADE;
 DROP TABLE IF EXISTS labs CASCADE;
-
 DROP TABLE IF EXISTS pm_plan_tasks CASCADE;
 DROP TABLE IF EXISTS pm_plans CASCADE;
-
 DROP TABLE IF EXISTS priorities CASCADE;
 DROP TABLE IF EXISTS audit_logs CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS roles CASCADE;
 
 -- =========================
--- Core / IAM
+-- 1. Core / IAM
 -- =========================
 CREATE TABLE roles (
   id            BIGSERIAL PRIMARY KEY,
@@ -37,9 +40,9 @@ CREATE TABLE users (
   id            BIGSERIAL PRIMARY KEY,
   full_name     TEXT NOT NULL,
   email         TEXT NOT NULL UNIQUE,
-  password_hash TEXT,            -- nullable for Google OAuth users
-  google_id     TEXT UNIQUE,     -- Google sub ID for OAuth users
-  avatar_url    TEXT,            -- Google profile picture
+  password_hash TEXT,
+  google_id     TEXT UNIQUE,
+  avatar_url    TEXT,
   phone         TEXT,
   department    TEXT,
   job_title     TEXT,
@@ -61,7 +64,7 @@ CREATE TABLE audit_logs (
 );
 
 -- =========================
--- Master Data
+-- 2. Master Data
 -- =========================
 CREATE TABLE priorities (
   id          BIGSERIAL PRIMARY KEY,
@@ -73,6 +76,7 @@ CREATE TABLE priorities (
 CREATE TABLE labs (
   id          BIGSERIAL PRIMARY KEY,
   name        TEXT NOT NULL UNIQUE,
+  building    TEXT,
   location    TEXT,
   description TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -88,14 +92,31 @@ CREATE TABLE devices (
 );
 
 -- =========================
--- Maintenance Requests
+-- 3. Departments & Job Titles
+-- =========================
+CREATE TABLE departments (
+  id          BIGSERIAL PRIMARY KEY,
+  name        TEXT NOT NULL UNIQUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE job_titles (
+  id            BIGSERIAL PRIMARY KEY,
+  department_id BIGINT NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  title         TEXT NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(department_id, title)
+);
+
+-- =========================
+-- 4. Maintenance Requests
 -- =========================
 CREATE TABLE maintenance_requests (
   id              BIGSERIAL PRIMARY KEY,
   request_code    TEXT UNIQUE,
   title           TEXT,
-  asset_name      TEXT, -- legacy field or quick typing
-  location        TEXT, -- legacy field or quick typing
+  asset_name      TEXT,
+  location        TEXT,
   description     TEXT NOT NULL,
   image_url       TEXT,
   priority_id     BIGINT REFERENCES priorities(id) ON DELETE SET NULL,
@@ -130,7 +151,7 @@ CREATE TABLE notifications (
 );
 
 -- =========================
--- Preventive Maintenance
+-- 5. Preventive Maintenance
 -- =========================
 CREATE TABLE pm_plans (
   id              BIGSERIAL PRIMARY KEY,
@@ -150,31 +171,30 @@ CREATE TABLE pm_plan_tasks (
 );
 
 -- =========================
--- Seed Data
+-- 6. Seed Data
 -- =========================
-INSERT INTO roles (name, description)
-VALUES
-  ('admin','System administrator'),
-  ('planner','Maintenance planner'),
-  ('technician','Maintenance technician'),
-  ('requester','Requester / operator'),
-  ('it support','IT Support / Lab technician')
+
+-- Roles (3 roles only: admin, user, IT Support)
+INSERT INTO roles (name, description) VALUES
+  ('admin',      'مدير النظام - صلاحيات كاملة'),
+  ('user',       'مستخدم عادي - إنشاء وتتبع الطلبات'),
+  ('IT Support', 'دعم تقني - إدارة الطلبات والأجهزة')
 ON CONFLICT (name) DO NOTHING;
 
--- Default admin user (password: admin123)
+-- Default admin user (email: admin, password: admin)
 INSERT INTO users (full_name, email, password_hash, role_id, is_active)
 SELECT
-  'System Admin',
-  'admin@cmms.local',
-  crypt('admin123', gen_salt('bf')),
+  'Admin',
+  'admin',
+  crypt('admin', gen_salt('bf')),
   r.id,
   TRUE
 FROM roles r
 WHERE r.name = 'admin'
 ON CONFLICT (email) DO NOTHING;
 
-INSERT INTO priorities (name, sort_order)
-VALUES
+-- Priorities
+INSERT INTO priorities (name, sort_order) VALUES
   ('Low', 10),
   ('Medium', 20),
   ('High', 30),
