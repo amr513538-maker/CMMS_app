@@ -72,7 +72,7 @@ app.use("/api/devices", require("./routes/deviceRoutes"));
 // --------------------------------------------------------
 
 // Create asset
-app.post("/assets", async (req, res) => {
+app.post("/api/assets", async (req, res) => {
   try {
     const { asset_name, asset_type, location } = req.body;
     if (!asset_name) {
@@ -90,7 +90,7 @@ app.post("/assets", async (req, res) => {
 });
 
 // Get all assets
-app.get("/assets", async (req, res) => {
+app.get("/api/assets", async (req, res) => {
   try {
     const allAssets = await pool.query(
       "SELECT id, asset_name, asset_type, location_id, notes, created_at FROM assets ORDER BY id"
@@ -103,7 +103,7 @@ app.get("/assets", async (req, res) => {
 });
 
 // Bulk insert assets
-app.post("/assets/bulk", async (req, res) => {
+app.post("/api/assets/bulk", async (req, res) => {
   try {
     const assets = req.body;
     const insertedAssets = [];

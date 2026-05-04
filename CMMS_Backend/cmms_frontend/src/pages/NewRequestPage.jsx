@@ -18,14 +18,15 @@ export default function NewRequestPage() {
   const [desc, setDesc] = useState("");
   const [titleError, setTitleError] = useState("");
   const [descError, setDescError] = useState("");
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   
+  const [buildings, setBuildings] = useState([]);
   const navigate = useNavigate();
 
   if (isTech()) {
     return <Navigate to="/dashboard" replace />;
   }
-
-  const [buildings, setBuildings] = useState([]);
 
   useEffect(() => {
     api("/api/buildings").then(r => r.ok ? r.json() : []).then(setBuildings).catch(() => {});
@@ -194,16 +195,41 @@ export default function NewRequestPage() {
               </select>
             </div>
             
-            <div className="space-y-4 col-span-3">
+             <div className="space-y-4 col-span-3">
                <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest block mr-1">صورة مرفقة / لقطة للعطل 📸</label>
-               <div className="relative border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:border-blue-400 transition-colors flex items-center justify-center bg-slate-50/50 dark:bg-slate-800/50">
-                 <input type="file" name="image" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" />
-                 <div className="text-center">
-                    <svg className="w-8 h-8 mx-auto text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    <span className="text-sm font-bold text-slate-500 dark:text-slate-400">انقر لرفع صورة أو اسحبها هنا</span>
-                 </div>
+               <div className="relative border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:border-blue-400 transition-colors flex flex-col items-center justify-center bg-slate-50/50 dark:bg-slate-800/50 min-h-[100px]">
+                 <input
+                   type="file"
+                   name="image"
+                   accept="image/*"
+                   className="absolute inset-0 opacity-0 cursor-pointer"
+                   onChange={e => {
+                     const file = e.target.files[0];
+                     if (file) {
+                       setImageFile(file);
+                       const reader = new FileReader();
+                       reader.onload = ev => setImagePreview(ev.target.result);
+                       reader.readAsDataURL(file);
+                     }
+                   }}
+                 />
+                 {imagePreview ? (
+                   <div className="relative w-full">
+                     <img src={imagePreview} alt="معاينة" className="w-full max-h-48 object-cover rounded-xl" />
+                     <button
+                       type="button"
+                       onClick={() => { setImagePreview(null); setImageFile(null); }}
+                       className="absolute top-2 left-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-black hover:bg-red-600 z-10"
+                     >✕</button>
+                   </div>
+                 ) : (
+                   <div className="text-center">
+                     <svg className="w-8 h-8 mx-auto text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                     <span className="text-sm font-bold text-slate-500 dark:text-slate-400">انقر لرفع صورة أو اسحبها هنا</span>
+                   </div>
+                 )}
                </div>
-            </div>
+             </div>
           </div>
 
           <div className="pt-4">

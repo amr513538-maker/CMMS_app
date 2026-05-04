@@ -86,12 +86,16 @@ const getRequests = async (req, res) => {
     }
 
     const rows = await pool.query(
-      `SELECT mr.id, mr.request_code, mr.title, mr.location, mr.asset_name, mr.description, p.name AS priority, mr.status, mr.requested_at, u.full_name as assigned_to
+      `SELECT mr.id, mr.request_code, mr.title, mr.location, mr.asset_name, mr.description,
+              p.name AS priority, mr.status, mr.requested_at,
+              uReq.full_name as requested_by_name,
+              uAsg.full_name as assigned_to
        FROM maintenance_requests mr
        LEFT JOIN priorities p ON p.id = mr.priority_id
-       LEFT JOIN users u ON u.id = mr.assigned_to
+       LEFT JOIN users uReq ON uReq.id = mr.requested_by
+       LEFT JOIN users uAsg ON uAsg.id = mr.assigned_to
        ${condition}
-       ORDER BY mr.id DESC LIMIT 100`, params
+       ORDER BY mr.id DESC LIMIT 200`, params
     );
     res.json(rows.rows);
   } catch (err) {
@@ -132,10 +136,14 @@ const trackRequest = async (req, res) => {
 
 const statusTranslations = {
   'New': 'جديد',
-  'Pending': 'معلق',
   'In Progress': 'قيد التنفيذ',
-  'Done': 'مكتمل'
+  'Done': 'مكتمل',
+  'Assigned': 'مُكلَّف',
+  'Cancelled': 'ملغى'
 };
+
+// الحالات المسموح بها عبر الواجهة
+const ALLOWED_STATUSES = ['New', 'In Progress', 'Done'];
 
 const notifyOnStatusChange = async (reqId, newStatus, actorUserId) => {
   try {
@@ -203,12 +211,23 @@ const addEvent = async (req, res) => {
 
     if (!message) return res.status(400).json({ error: "الرسالة مطلوبة" });
 
+    // التحقق من صحة event_type إذا تم إرساله
+    const validEventTypes = ['comment', 'status_change', 'assignment', 'system'];
+    if (event_type && !validEventTypes.includes(event_type)) {
+      return res.status(400).json({ error: `نوع الحدث غير صحيح. المسموح به: ${validEventTypes.join(', ')}` });
+    }
+
     const requestRow = await pool.query("SELECT * FROM maintenance_requests WHERE id = $1", [reqId]);
-    if (requestRow.rows.length === 0) return res.status(404).json({ error: "Not Found" });
+    if (requestRow.rows.length === 0) return res.status(404).json({ error: "الطلب غير موجود" });
     const oldStatus = requestRow.rows[0].status;
 
+    let actionDone = false;
+
     if (new_status && new_status !== oldStatus) {
-      if (role === "user") return res.status(403).json({ error: "Access Denied" });
+      if (role === "user") return res.status(403).json({ error: "ليس لديك صلاحية تغيير الحالة" });
+      if (!ALLOWED_STATUSES.includes(new_status)) {
+        return res.status(400).json({ error: `الحالة غير صحيحة. المسموح به: ${ALLOWED_STATUSES.join(', ')}` });
+      }
 
       let dateQuery = "";
       if (new_status === "In Progress") dateQuery = ", started_at = NOW()";
@@ -221,6 +240,7 @@ const addEvent = async (req, res) => {
         [reqId, userId, `تم تغيير الحالة إلى: ${translatedStatus}`]
       );
       await notifyOnStatusChange(reqId, new_status, userId);
+      actionDone = true;
     }
 
     if (assign_to && (role === "admin" || role === "planner")) {
@@ -232,6 +252,7 @@ const addEvent = async (req, res) => {
         [reqId, userId, `تم تعيين الطلب إلى: ${techName}`]
       );
       await notifyOnAssignment(reqId, assign_to, userId);
+      actionDone = true;
     }
 
     if (event_type === "comment") {
@@ -240,11 +261,17 @@ const addEvent = async (req, res) => {
         [reqId, userId, message]
       );
       await notifyOnComment(reqId, message, userId);
+      actionDone = true;
+    }
+
+    if (!actionDone) {
+      return res.status(400).json({ error: "لم يتم تحديد إجراء صحيح (تعليق أو تغيير حالة أو تعيين)" });
     }
 
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: "Server Error" });
+    console.error("Error in addEvent:", err.message, err.stack);
+    res.status(500).json({ error: "حدث خطأ داخلي في الخادم. يرجى المحاولة مرة أخرى." });
   }
 };
 
@@ -255,8 +282,20 @@ const updateStatus = async (req, res) => {
     const role = req.user.role;
     const { status } = req.body;
 
+    // تحقق من صحة المعرف reqId
+    if (!reqId || isNaN(reqId)) {
+      return res.status(400).json({ error: "معرف الطلب غير صحيح" });
+    }
+
+    // تحقق من الصلاحية أولاً
+    if (role === "user") {
+      return res.status(403).json({ error: "ليس لديك صلاحية تغيير حالة الطلب" });
+    }
+
     if (!status) return res.status(400).json({ error: "الحالة مطلوبة" });
-    if (role === "user") return res.status(403).json({ error: "Access Denied" });
+    if (!ALLOWED_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `الحالة غير صحيحة. الحالات المسموحة: ${ALLOWED_STATUSES.join(', ')}` });
+    }
 
     const requestRow = await pool.query("SELECT * FROM maintenance_requests WHERE id = $1", [reqId]);
     if (requestRow.rows.length === 0) return res.status(404).json({ error: "الطلب غير موجود" });
@@ -276,10 +315,10 @@ const updateStatus = async (req, res) => {
       await notifyOnStatusChange(reqId, status, userId);
     }
 
-    res.json({ success: true });
+    res.json({ success: true, changed: status !== oldStatus, newStatus: status });
   } catch (err) {
-    console.error("Error updating status:", err.message);
-    res.status(500).json({ error: "Server Error" });
+    console.error("Error updating status:", err.message, err.stack);
+    res.status(500).json({ error: "حدث خطأ داخلي. يرجى المحاولة مرة أخرى." });
   }
 };
 

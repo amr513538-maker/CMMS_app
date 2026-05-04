@@ -188,11 +188,18 @@ const deleteUsersBatch = async (req, res) => {
     const idList = ids.map(id => parseInt(id)).filter(id => !isNaN(id));
     if (idList.length === 0) return res.status(400).json({ error: "Invalid IDs" });
 
-    const checkingAdmins = await pool.query(`SELECT email FROM users WHERE id = ANY($1::bigint[])`, [idList]);
-    for (const row of checkingAdmins.rows) {
-      if (row.email === 'admin@cmms.local' || row.email === 'admin') {
-        return res.status(403).json({ error: "لا يمكن حذف الـ Admin الرئيسي من النظام" });
-      }
+    // منع حذف آخر مدير في النظام
+    const adminCountRes = await pool.query(
+      `SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE r.name = 'admin' AND u.id != ALL($1::bigint[])`,
+      [idList]
+    );
+    const remainingAdmins = parseInt(adminCountRes.rows[0].count);
+    const deletingAdmins = await pool.query(
+      `SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE r.name = 'admin' AND u.id = ANY($1::bigint[])`,
+      [idList]
+    );
+    if (parseInt(deletingAdmins.rows[0].count) > 0 && remainingAdmins === 0) {
+      return res.status(403).json({ error: "لا يمكن حذف آخر مدير للنظام" });
     }
 
     await pool.query(`DELETE FROM users WHERE id = ANY($1::bigint[])`, [idList]);
@@ -211,12 +218,19 @@ const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const check = await pool.query("SELECT email FROM users WHERE id = $1", [id]);
+    const check = await pool.query(
+      `SELECT r.name as role FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = $1`,
+      [id]
+    );
     if (check.rows.length === 0) return res.status(404).json({ error: "المستخدم غير موجود" });
 
-    const email = check.rows[0].email;
-    if (email === 'admin@cmms.local' || email === 'admin') {
-      return res.status(403).json({ error: "لا يمكن حذف الـ Admin الرئيسي من النظام" });
+    if (check.rows[0].role === 'admin') {
+      const adminCount = await pool.query(
+        `SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE r.name = 'admin'`
+      );
+      if (parseInt(adminCount.rows[0].count) <= 1) {
+        return res.status(403).json({ error: "لا يمكن حذف آخر مدير للنظام" });
+      }
     }
 
     await pool.query("DELETE FROM users WHERE id = $1", [id]);

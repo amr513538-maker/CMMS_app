@@ -154,8 +154,6 @@ function AdminDashboard({ requestData = {} }) {
                 <ProgressBarRow label="مكتملة" percent={requestData?.breakdown?.completed?.percent || 0} color="bg-blue-600" />
                 <ProgressBarRow label="قيد التنفيذ" percent={requestData?.breakdown?.inProgress?.percent || 0} color="bg-orange-500" />
                 <ProgressBarRow label="متأخرة" percent={requestData?.breakdown?.delayed?.percent || 0} color="bg-red-500" />
-                <ProgressBarRow label="مجدولة" percent={requestData?.breakdown?.scheduled?.percent || 0} color="bg-emerald-500" />
-                <ProgressBarRow label="مغلقة" percent={requestData?.breakdown?.closed?.percent || 0} color="bg-indigo-400" />
               </div>
            </div>
         </div>

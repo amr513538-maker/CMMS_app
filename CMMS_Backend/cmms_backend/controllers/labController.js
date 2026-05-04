@@ -23,9 +23,22 @@ const getLabs = async (req, res) => {
 
 const createLab = async (req, res) => {
   try {
-    const { name, building, department } = req.body;
+    const { name, building, building_id, department } = req.body;
     if (!name) return res.status(400).json({ error: "Name is required" });
-    const newLab = await pool.query("INSERT INTO labs (name, building, department) VALUES ($1, $2, $3) RETURNING *", [name, building, department]);
+
+    // إذا تم إرسال building_id، نجلب اسم المبنى تلقائياً لتوحيد حقل building النصي
+    let finalBuilding = building || null;
+    let finalBuildingId = building_id ? Number(building_id) : null;
+
+    if (finalBuildingId && !finalBuilding) {
+      const bRow = await pool.query("SELECT name FROM buildings WHERE id = $1", [finalBuildingId]);
+      if (bRow.rows.length > 0) finalBuilding = bRow.rows[0].name;
+    }
+
+    const newLab = await pool.query(
+      "INSERT INTO labs (name, building, building_id, department) VALUES ($1, $2, $3, $4) RETURNING *",
+      [name, finalBuilding, finalBuildingId, department || null]
+    );
     res.status(201).json(newLab.rows[0]);
   } catch (err) {
     console.error("Error creating lab:", err.message);
@@ -36,8 +49,20 @@ const createLab = async (req, res) => {
 const updateLab = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, building, department } = req.body;
-    const updated = await pool.query("UPDATE labs SET name = $1, building = $2, department = $3 WHERE id = $4 RETURNING *", [name, building, department, id]);
+    const { name, building, building_id, department } = req.body;
+
+    let finalBuilding = building || null;
+    let finalBuildingId = building_id ? Number(building_id) : null;
+
+    if (finalBuildingId && !finalBuilding) {
+      const bRow = await pool.query("SELECT name FROM buildings WHERE id = $1", [finalBuildingId]);
+      if (bRow.rows.length > 0) finalBuilding = bRow.rows[0].name;
+    }
+
+    const updated = await pool.query(
+      "UPDATE labs SET name = $1, building = $2, building_id = $3, department = $4 WHERE id = $5 RETURNING *",
+      [name, finalBuilding, finalBuildingId, department || null, id]
+    );
     res.json(updated.rows[0]);
   } catch (err) {
     console.error("Error updating lab:", err.message);

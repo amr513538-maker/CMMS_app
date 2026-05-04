@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
       case "viewReports": return role === "admin";
       case "viewAuditLog": return role === "admin";
       case "viewSettings": return role === "admin";
-      case "editProfile": return role === "admin";
+      case "editProfile": return ["admin", "user", "IT Support"].includes(role);
       default: return false;
     }
   };

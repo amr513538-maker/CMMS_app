@@ -32,12 +32,17 @@ export default function Navbar() {
   }, [pathname]);
 
   useEffect(() => {
-    if (token) {
-      api("/api/notifications/unread")
-        .then(res => res.json())
-        .then(data => setUnreadCount(data.count || 0))
-        .catch(err => console.error("Failed to fetch notifications"));
-    }
+    const fetchUnread = () => {
+      if (token) {
+        api("/api/notifications/unread")
+          .then(res => res.json())
+          .then(data => setUnreadCount(data.count || 0))
+          .catch(() => {});
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
   }, [token, pathname]);
 
   if (!token) return null;

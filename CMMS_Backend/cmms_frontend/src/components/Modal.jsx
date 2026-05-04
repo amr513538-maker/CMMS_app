@@ -1,7 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 
-export default function Modal({ title, description, onCancel, onConfirm, confirmText = "تأكيد", cancelText = "إلغاء", type = "danger", maxWidth = "max-w-md", children }) {
+export default function Modal({ title, description, onCancel, onConfirm, confirmText = "تأكيد", cancelText = "إلغاء", type = "danger", maxWidth = "max-w-md", confirmDisabled = false, children }) {
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xl animate-in fade-in duration-500">
       <div className={`bg-white dark:bg-slate-900 w-full ${maxWidth} rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-slate-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-500 flex flex-col max-h-[90vh] relative transition-colors`}>
@@ -41,11 +41,15 @@ export default function Modal({ title, description, onCancel, onConfirm, confirm
         {onConfirm && (
           <div className="bg-slate-50/50 dark:bg-slate-800/50 px-8 py-6 flex flex-row-reverse gap-4 border-t border-slate-100 dark:border-slate-800">
             <button
-              onClick={onConfirm}
-              className={`flex-1 py-4 rounded-2xl text-base font-black shadow-xl transition-all active:scale-95 ${
+              onClick={confirmDisabled ? undefined : onConfirm}
+              disabled={confirmDisabled}
+              className={`flex-1 py-4 rounded-2xl text-base font-black shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${
                 type === 'danger' ? 'bg-red-600 text-white hover:bg-red-700 shadow-red-500/20' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/20'
               }`}
             >
+              {confirmDisabled && (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              )}
               {confirmText}
             </button>
             <button
